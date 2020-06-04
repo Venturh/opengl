@@ -37,9 +37,10 @@ class RenderWindow:
         self.doRotation = False
         self.doZoom = False
         self.doTranslate = False
-        self.colors = {"black": (0.0, 0.0, 0.0, 0.0) ,"white": (1.0, 1.0, 1.0, 0.0), "red": (1.0, 0.0, 0.0, 0.0), "blue": (0.0, 0.0, 1.0, 0.0), "yellow":(1.0, 1.0, 0.0, 0.0)}
-        self.color = self.colors["black"]
-
+        self.colors = {"black": (0.0, 0.0, 0.0, 0.0), "white": (1.0, 1.0, 1.0, 0.0), "red": (1.0, 0.0, 0.0, 0.0),
+                       "blue": (0.0, 0.0, 1.0, 0.0), "yellow": (1.0, 1.0, 0.0, 0.0)}
+        self.color = self.colors["yellow"]
+        self.projections = "ortho"
 
         # Make the window's context current
         glfw.make_context_current(self.window)
@@ -128,42 +129,84 @@ class RenderWindow:
 
     def onKeyboard(self, win, key, scancode, action, mods):
 
-        if mods:
-            if key == glfw.KEY_S:
-                self.color = self.colors["black"]
-            if key == glfw.KEY_W:
-                self.color = self.colors["white"]
-            if key == glfw.KEY_R:
-                self.color = self.colors["red"]
-            if key == glfw.KEY_G:
-                self.color = self.colors["yellow"]
-            if key == glfw.KEY_B:
-                self.color = self.colors["blue"]
-            glClearColor(*self.color)
+        if action == glfw.PRESS:
 
-        #lower Case changes Object
-        else:
-            print("lower")
-            if key == glfw.KEY_S:
-                self.scene.color = self.scene.colors["black"]
-            if key == glfw.KEY_W:
-                self.scene.color = self.scene.colors["white"]
-            if key == glfw.KEY_R:
-                self.scene.color = self.scene.colors["red"]
-            if key == glfw.KEY_G:
-                self.scene.color = self.scene.colors["yellow"]
-            if key == glfw.KEY_B:
-                self.scene.color = self.scene.colors["blue"]
+            if key == glfw.KEY_P:
+                print("ortho")
+                self.projections = "ortho"
+                self.onSize(self.window, self.width, self.height)
+
+            if key == glfw.KEY_O:
+                print("central")
+                self.projections = "central"
+                self.onSize(self.window, self.width, self.height)
+
+            if key == glfw.KEY_H:
+                self.scene.showShadow = not self.scene.showShadow
+                print("shadow", self.scene.showShadow)
+
+            if mods:
+                if key == glfw.KEY_S:
+                    self.color = self.colors["black"]
+                    glClearColor(*self.color)
+
+                if key == glfw.KEY_W:
+                    self.color = self.colors["white"]
+                    glClearColor(*self.color)
+
+                if key == glfw.KEY_R:
+                    self.color = self.colors["red"]
+                    glClearColor(*self.color)
+
+                if key == glfw.KEY_G:
+                    self.color = self.colors["yellow"]
+                    glClearColor(*self.color)
+
+                if key == glfw.KEY_B:
+                    self.color = self.colors["blue"]
+                    glClearColor(*self.color)
 
 
 
+            # lower Case changes Object
+            else:
+                if key == glfw.KEY_S:
+                    self.scene.color = self.scene.colors["black"]
+                if key == glfw.KEY_W:
+                    self.scene.color = self.scene.colors["white"]
+                if key == glfw.KEY_R:
+                    self.scene.color = self.scene.colors["red"]
+                if key == glfw.KEY_G:
+                    self.scene.color = self.scene.colors["yellow"]
+                if key == glfw.KEY_B:
+                    self.scene.color = self.scene.colors["blue"]
 
     def onSize(self, win, width, height):
-        print("onsize: ", win, width, height)
+        print("onsize: ", width, height)
         self.width = width
         self.height = height
         self.aspect = width / float(height)
+
+        aspectHeight = float(height) / width
+
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
         glViewport(0, 0, self.width, self.height)
+
+        if self.projections in "ortho":
+            print("ortho")
+            if width <= height:
+                glOrtho(-1.5, 1.5, (-1.5) * aspectHeight,
+                        1.5 * aspectHeight, -10.0, 10.0)
+            else:
+                glOrtho((-1.5) * self.aspect, 1.5 * self.aspect, -1.5, 1.5,
+                        -10.0, 10.0)
+
+        else:
+            print("central")
+
+        glMatrixMode(GL_MODELVIEW)
+
 
     def run(self):
         # initializer timer

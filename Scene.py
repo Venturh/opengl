@@ -29,6 +29,7 @@ class Scene:
         self.colors = {"black": (0.0, 0.0, 0.0), "white": (1.0, 1.0, 1.0), "red": (1.0, 0.0, 0.0),
                        "blue": (0.0, 0.0, 1.0), "yellow": (1.0, 1.0, 0.0)}
         self.color = self.colors["blue"]
+        self.showShadow = False
 
     def createObjFromFile(self):
         for line in open(sys.argv[1]):
@@ -95,34 +96,64 @@ class Scene:
         return r.transpose()
 
     def render(self):
-        # render the vector starting at the point
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_NORMALIZE)
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glEnable(GL_COLOR_MATERIAL)
+
+        light = np.array([1.0, 1.0, 1, 0.0])
 
         glMatrixMode(GL_MODELVIEW)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glLoadIdentity()
-
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-
-        glEnable(GL_COLOR_MATERIAL)
-        glLightfv(GL_LIGHT0, GL_POSITION, np.array([0.0, 100000.0, -0.1, 0.0]))
 
         self.vb.bind()
         glEnableClientState(GL_VERTEX_ARRAY)
         glEnableClientState(GL_NORMAL_ARRAY)
+
         glVertexPointer(3, GL_FLOAT, 24, self.vb)
         glNormalPointer(GL_FLOAT, 24, self.vb + 12)
+
+
+        glLightfv(GL_LIGHT0, GL_POSITION, light)
+
+        if self.showShadow:
+            p = [1.0, 0, 0, 0, 0, 1.0, 0, -1.0 / light[1], 0, 0, 1.0, 0, 0, 0, 0, 0]
+            glMatrixMode(GL_MODELVIEW)
+            glPushMatrix()
+            glTranslatef(light[0], light[1], light[2])
+            glDisable(GL_DEPTH_TEST)
+            glDisable(GL_LIGHTING)
+
+            glMultMatrixf(p)
+            glColor3fv(self.colors["black"])
+            glTranslatef(-light[0], -light[1], -light[2])
+            glDrawArrays(GL_TRIANGLES, 0, len(self.data))
+
+            glEnable(GL_LIGHTING)
+            glEnable(GL_DEPTH_TEST)
+            glPopMatrix()
+
+        glLoadIdentity()
 
         if self.translateXY is not None:
             glTranslate(self.translateXY[0], -self.translateXY[1], 0.0)
 
-        glMultMatrixf(self.actOri * self.rotate(self.angle, self.axis))
 
         glColor3fv(self.color)
-        glScale(self.scale, self.scale, self.scale)
-        glTranslate(-0, -0, -0)
+        glScale(self.scale, self.scale,self.scale)
+        glTranslate(-self.translate[0], -self.translate[1], -self.translate[2])
+        glMultMatrixf(self.actOri * self.rotate(self.angle, self.axis))
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDrawArrays(GL_TRIANGLES, 0, len(self.data))
 
+
+
+
+
+
         self.vb.unbind()
+
         glDisableClientState(GL_VERTEX_ARRAY)
         glDisableClientState(GL_NORMAL_ARRAY)
