@@ -40,13 +40,14 @@ class Scene:
                 if (type == 'vn'):
                     self.vnormals.append(list(map(float, line.split()[1:])))
                 if (type == "f"):
-                    first = line.split()[1:]
-                    for face in first:
+                    for face in line.split()[1:]:
                         self.faces.append(list(map(float, face.split('//'))))
+        print(np.min(self.vertices[0]))
 
     def createBoundingBox(self):
         minimum = (
             min([x[0] for x in self.vertices]), min([x[1] for x in self.vertices]), min([x[2] for x in self.vertices]))
+
         maximum = (
             max([x[0] for x in self.vertices]), max([x[1] for x in self.vertices]), max([x[2] for x in self.vertices]))
         return minimum, maximum
@@ -54,10 +55,9 @@ class Scene:
     def scaleIt(self, minimum, maximum):
         xmin, ymin, zmin = minimum
         xmax, ymax, zmax = maximum
-        xr = xmax - xmin
-        yr = ymax - ymin
-        zr = zmax - zmin
-        return 2.0 / max(xr, yr, zr)
+        return 2.0 / max(abs(xmax - xmin),
+                         abs(ymax - ymin), abs(zmax - zmin))
+
 
     def translateIt(self, minimum, maximum):
         xmin, ymin, zmin = minimum
@@ -73,14 +73,7 @@ class Scene:
         for vertex in self.faces:
             vn = int(vertex[0]) - 1
             nn = int(vertex[1]) - 1
-            if 0 <= nn < len(self.vnormals):
-                newData.append(self.vertices[vn] + self.vnormals[nn])
-            else:
-                self.vnormals = [x - y for x, y in
-                                 zip(self.vertices[vn], [self.translate[0], self.translate[1], self.translate[2]])]
-                l = math.sqrt(self.vnormals[0] ** 2 + self.vnormals[1] ** 2 + self.vnormals[2] ** 2)
-                self.vnormals = [x / l for x in self.vnormals]
-                newData.append(self.vertices[vn] + self.vnormals)
+            newData.append(self.vertices[vn] + self.vnormals[nn])
         return newData
 
     def rotate(self, angle, axis):
@@ -102,7 +95,7 @@ class Scene:
         glEnable(GL_LIGHT0)
         glEnable(GL_COLOR_MATERIAL)
 
-        light = np.array([1.0, 1.0, 1, 0.0])
+        light = np.array([0.0, 10, 10])
 
         glMatrixMode(GL_MODELVIEW)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -122,11 +115,13 @@ class Scene:
             glMatrixMode(GL_MODELVIEW)
             glPushMatrix()
             glTranslatef(light[0], light[1], light[2])
+            glTranslatef(0.0, self.minimum[1], 0.0)
             glDisable(GL_DEPTH_TEST)
             glDisable(GL_LIGHTING)
 
             glMultMatrixf(p)
             glColor3fv(self.colors["black"])
+            glTranslatef(0.0, -self.minimum[1], 0.0)
             glTranslatef(-light[0], -light[1], -light[2])
             glDrawArrays(GL_TRIANGLES, 0, len(self.data))
 
@@ -144,16 +139,9 @@ class Scene:
         glScale(self.scale, self.scale,self.scale)
         glTranslate(-self.translate[0], -self.translate[1], -self.translate[2])
         glMultMatrixf(self.actOri * self.rotate(self.angle, self.axis))
-
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDrawArrays(GL_TRIANGLES, 0, len(self.data))
 
-
-
-
-
-
         self.vb.unbind()
-
         glDisableClientState(GL_VERTEX_ARRAY)
         glDisableClientState(GL_NORMAL_ARRAY)

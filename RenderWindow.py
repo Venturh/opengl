@@ -2,6 +2,7 @@ import glfw
 import math
 import numpy as np
 from OpenGL.GL import *
+from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 from Scene import Scene
@@ -55,7 +56,8 @@ class RenderWindow:
         glClearColor(*self.color)
         glMatrixMode(GL_PROJECTION)
         glOrtho(-1.5, 1.5, -1.5, 1.5, -10.0, 10.0)
-        # glOrtho(-self.width/2,self.width/2,-self.height/2,self.height/2,-2,2)
+        #glOrtho(-self.scene.scale, self.scene.scale, -self.scene.scale, self.scene.scale, -10.0, 10.0)
+        #glOrtho(-self.width/2,self.width/2,-self.height/2,self.height/2,-2,2)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_NORMALIZE)
 
@@ -110,13 +112,13 @@ class RenderWindow:
             self.scene.axis = np.cross(self.scene.startP, moveP)
 
         if self.doZoom:
-            if self.scene.zoom > y and self.scene.scale > 0:
-                self.scene.scale += abs(float(float((y - self.scene.startP[1])) / self.height))
+            if self.scene.zoom > y:
+                self.scene.scale += y / self.height
 
-            if self.scene.zoom <= y and self.scene.scale > 0:
-                self.scene.scale -= abs(float(float((y - self.scene.startP[1])) / self.height))
+            if self.scene.zoom <= y:
+                self.scene.scale -= y / self.height
             # if scale is to small/big
-            if self.scene.scale <= 0.0015:
+            if self.scene.scale <= 0.002:
                 self.scene.scale = 0.1
             if self.scene.scale >= 10:
                 self.scene.scale = 8
@@ -202,8 +204,10 @@ class RenderWindow:
                 glOrtho((-1.5) * self.aspect, 1.5 * self.aspect, -1.5, 1.5,
                         -10.0, 10.0)
 
-        else:
+        elif self.projections in "central" :
             print("central")
+            gluPerspective(120, self.aspect, 0.1, 100)
+            gluLookAt(4,0,4,0,0,0,0,1,0)
 
         glMatrixMode(GL_MODELVIEW)
 
@@ -220,7 +224,6 @@ class RenderWindow:
                 t = currT
                 # clear
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
                 # render scene
                 self.scene.render()
 
