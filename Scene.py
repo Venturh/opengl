@@ -30,6 +30,7 @@ class Scene:
                        "blue": (0.0, 0.0, 1.0), "yellow": (1.0, 1.0, 0.0)}
         self.color = self.colors["blue"]
         self.showShadow = False
+        print("min: ", self.minimum, "max: ", self.maximum)
 
     def createObjFromFile(self):
         for line in open(sys.argv[1]):
@@ -40,9 +41,12 @@ class Scene:
                 if (type == 'vn'):
                     self.vnormals.append(list(map(float, line.split()[1:])))
                 if (type == "f"):
-                    for face in line.split()[1:]:
-                        self.faces.append(list(map(float, face.split('//'))))
-        print(np.min(self.vertices[0]))
+                    if(len(self.vnormals) > 0):
+                        for face in line.split()[1:]:
+                            self.faces.append(list(map(float, face.split('//'))))
+                    elif (len(self.vnormals) == 0):
+                        for face in line.splitlines():
+                            self.faces.append(list(map(float, face[1:].split())))
 
     def createBoundingBox(self):
         minimum = (
@@ -58,7 +62,6 @@ class Scene:
         return 2.0 / max(abs(xmax - xmin),
                          abs(ymax - ymin), abs(zmax - zmin))
 
-
     def translateIt(self, minimum, maximum):
         xmin, ymin, zmin = minimum
         xmax, ymax, zmax = maximum
@@ -70,10 +73,25 @@ class Scene:
 
     def createData(self):
         newData = []
+        if len(self.vnormals) == 0:
+            while len(self.vnormals) < len(self.vertices):
+                self.vnormals.append(np.zeros(3))
+            for face in self.faces:
+                v1 = np.array(self.vertices[int(face[0]) - 1])
+                v2 = np.array(self.vertices[int(face[1]) - 1])
+                v3 = np.array(self.vertices[int(face[2]) - 1])
+                n = np.cross(v2 - v1, v3 - v1)
+                #print("normals",  np.cross(v2 - v1, v3 - v1))
+                self.vnormals[int(face[0]) - 1] = n
+                self.vnormals[int(face[1]) - 1] = n
+                self.vnormals[int(face[2]) - 1] = n
+            print(self.vnormals)
+
         for vertex in self.faces:
             vn = int(vertex[0]) - 1
             nn = int(vertex[1]) - 1
             newData.append(self.vertices[vn] + self.vnormals[nn])
+
         return newData
 
     def rotate(self, angle, axis):
@@ -95,7 +113,8 @@ class Scene:
         glEnable(GL_LIGHT0)
         glEnable(GL_COLOR_MATERIAL)
 
-        light = np.array([0.0, 10, 10])
+
+        light = (self.maximum[1] - self.minimum[1]) * 2,(self.maximum[1] - self.minimum[1]) * 3, (self.maximum[1] - self.minimum[1]) * 2
 
         glMatrixMode(GL_MODELVIEW)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -107,9 +126,7 @@ class Scene:
         glVertexPointer(3, GL_FLOAT, 24, self.vb)
         glNormalPointer(GL_FLOAT, 24, self.vb + 12)
 
-
         glLightfv(GL_LIGHT0, GL_POSITION, light)
-
         if self.showShadow:
             p = [1.0, 0, 0, 0, 0, 1.0, 0, -1.0 / light[1], 0, 0, 1.0, 0, 0, 0, 0, 0]
             glMatrixMode(GL_MODELVIEW)
@@ -131,13 +148,12 @@ class Scene:
 
         glLoadIdentity()
 
-        if self.translateXY is not None:
+        if self.translateXY:
             glTranslate(self.translateXY[0], -self.translateXY[1], 0.0)
 
 
         glColor3fv(self.color)
-        glScale(self.scale, self.scale,self.scale)
-        glTranslate(-self.translate[0], -self.translate[1], -self.translate[2])
+        glScale(self.scale, self.scale, self.scale)
         glMultMatrixf(self.actOri * self.rotate(self.angle, self.axis))
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDrawArrays(GL_TRIANGLES, 0, len(self.data))
