@@ -4,6 +4,8 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.arrays import vbo
 
+FILE ="bunny"
+#FILE ="elephant"
 
 class Scene:
     def __init__(self, width, height):
@@ -12,6 +14,10 @@ class Scene:
         self.faces = []
         self.createObjFromFile()
         self.minimum, self.maximum = self.createBoundingBox()
+        centerMin = np.array((self.minimum[0]/2, self.minimum[1]/2, self.minimum[2]/2))
+        centerMax = np.array((self.maximum[0]/2, self.maximum[1]/2, self.maximum[2]/2))
+        self.center = (centerMin + centerMax) /2
+        print("center", self.center)
         self.scale = self.scaleIt(self.minimum, self.maximum)
         self.translate = self.translateIt(self.minimum, self.maximum)
         self.data = self.createData()
@@ -22,7 +28,8 @@ class Scene:
         self.angle = 0
         self.actOri = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
         self.axis = np.array([0, 0, 1])
-        self.zoom = 0
+        self.zoom = self.scale
+        self.initScale = self.scale
         self.startP = [0, 0, 0]
         self.moveP = 0
         self.translateXY = (0.0, 0.0)
@@ -30,10 +37,11 @@ class Scene:
                        "blue": (0.0, 0.0, 1.0), "yellow": (1.0, 1.0, 0.0)}
         self.color = self.colors["blue"]
         self.showShadow = False
-        print("min: ", self.minimum, "max: ", self.maximum)
+        print("scaloe", self.scale)
 
     def createObjFromFile(self):
-        for line in open(sys.argv[1]):
+        #for line in open(sys.argv[1]):
+        for line in open(FILE +".obj"):
             if line.split():
                 type = line.split()[0]
                 if (type == 'v'):
@@ -60,7 +68,7 @@ class Scene:
         xmin, ymin, zmin = minimum
         xmax, ymax, zmax = maximum
         return 2.0 / max(abs(xmax - xmin),
-                         abs(ymax - ymin), abs(zmax - zmin))
+                         abs(ymax - ymin), abs(zmax - zmin),)
 
     def translateIt(self, minimum, maximum):
         xmin, ymin, zmin = minimum
@@ -154,6 +162,7 @@ class Scene:
 
         glColor3fv(self.color)
         glScale(self.scale, self.scale, self.scale)
+        glTranslate(-self.center[0], -self.center[1], -self.center[2])
         glMultMatrixf(self.actOri * self.rotate(self.angle, self.axis))
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDrawArrays(GL_TRIANGLES, 0, len(self.data))

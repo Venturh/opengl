@@ -55,6 +55,7 @@ class RenderWindow:
         glEnable(GL_DEPTH_TEST)
         glClearColor(*self.color)
         glMatrixMode(GL_PROJECTION)
+
         glOrtho(-3.5, 3.5, -3.5, 3.5, -3.5, 3.5)
         #glOrtho(-self.width/2,self.width/2,-self.height/2,self.height/2,-2,2)
         glEnable(GL_DEPTH_TEST)
@@ -112,15 +113,16 @@ class RenderWindow:
 
         if self.doZoom:
             if self.scene.zoom > y:
-                self.scene.scale += y / self.height
+                self.scene.scale +=  self.scene.scale/30
+                print("zoom", self.scene.scale)
 
             if self.scene.zoom <= y:
-                self.scene.scale -= y / self.height
-            # if scale is to small/big
-            if self.scene.scale <= 0.002:
-                self.scene.scale = 0.1
-            if self.scene.scale >= 10:
-                self.scene.scale = 8
+                self.scene.scale -=  self.scene.scale/30
+            #if scale is to small/big
+            # if self.scene.scale <=self.scene.initScale/50:
+            #     self.scene.scale = self.scene.initScale
+            # if self.scene.scale >= self.scene.initScale * 10:
+            #     self.scene.scale = self.scene.initScale
             self.scene.zoom = y
 
         if self.doTranslate:
