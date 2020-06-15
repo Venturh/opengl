@@ -57,7 +57,7 @@ class RenderWindow:
         glMatrixMode(GL_PROJECTION)
 
         glOrtho(-3.5, 3.5, -3.5, 3.5, -3.5, 3.5)
-        #glOrtho(-self.width/2,self.width/2,-self.height/2,self.height/2,-2,2)
+        # glOrtho(-self.width/2,self.width/2,-self.height/2,self.height/2,-2,2)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_NORMALIZE)
 
@@ -113,16 +113,11 @@ class RenderWindow:
 
         if self.doZoom:
             if self.scene.zoom > y:
-                self.scene.scale +=  self.scene.scale/30
+                self.scene.scale += self.scene.scale / 30
                 print("zoom", self.scene.scale)
 
             if self.scene.zoom <= y:
-                self.scene.scale -=  self.scene.scale/30
-            #if scale is to small/big
-            # if self.scene.scale <=self.scene.initScale/50:
-            #     self.scene.scale = self.scene.initScale
-            # if self.scene.scale >= self.scene.initScale * 10:
-            #     self.scene.scale = self.scene.initScale
+                self.scene.scale -= self.scene.scale / 30
             self.scene.zoom = y
 
         if self.doTranslate:
@@ -205,13 +200,12 @@ class RenderWindow:
                 glOrtho((-1.5) * self.aspect, 1.5 * self.aspect, -1.5, 1.5,
                         -10.0, 10.0)
 
-        elif self.projections in "central" :
+        elif self.projections in "central":
             print("central")
             gluPerspective(120, self.aspect, 0.1, 100)
-            gluLookAt(4,0,4,0,0,0,0,1,0)
+            gluLookAt(4, 0, 4, 0, 0, 0, 0, 1, 0)
 
         glMatrixMode(GL_MODELVIEW)
-
 
     def run(self):
         # initializer timer

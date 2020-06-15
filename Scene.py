@@ -4,9 +4,6 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.arrays import vbo
 
-FILE = "cow"
-#FILE = "bunny"
-
 
 class Scene:
     def __init__(self, width, height):
@@ -40,8 +37,7 @@ class Scene:
         print("scaloe", self.scale)
 
     def createObjFromFile(self):
-        # for line in open(sys.argv[1]):
-        for line in open(FILE + ".obj"):
+        for line in open(sys.argv[1]):
             if line.split():
                 type = line.split()[0]
                 if (type == 'v'):
@@ -81,44 +77,26 @@ class Scene:
 
     def createData(self):
         newData = []
-        # if len(self.vnormals) == 0:
-        #     while len(self.vnormals) < len(self.vertices):
-        #         self.vnormals.append(np.zeros(3))
-        #     for face in self.faces:
-        #         v1 = np.array(self.vertices[int(face[0]) - 1])
-        #         v2 = np.array(self.vertices[int(face[1]) - 1])
-        #         v3 = np.array(self.vertices[int(face[2]) - 1])
-        #         n = np.cross(v2 - v1, v3 - v1)
-        #         #print("normals",  np.cross(v2 - v1, v3 - v1))
-        #         self.vnormals[int(face[0]) - 1] = n
-        #         self.vnormals[int(face[1]) - 1] = n
-        #         self.vnormals[int(face[2]) - 1] = n
-        #         v1 = int(face[0]) - 1
-        #         v2 = int(face[1]) - 1
-        #         v3 = int(face[2]) - 1
-        #         newData.append(self.vertices[v1] + n)
-        #         newData.append(self.vertices[v2] + n)
-        #         newData.append(self.vertices[v3] + n)
-        #     print(newData)
-        #     return newData
-
-        for vertex in self.faces:
-            vn = int(vertex[0]) - 1
-            nn = int(vertex[1]) - 1
-            if self.vnormals:
-                newData.append(self.vertices[vn] + self.vnormals[nn])
-            else:
-                v1 = int(vertex[0]-1)
-                v2 = int(vertex[1]-1)
-                v3 = int(vertex[2]-1)
-                tn = self.cross(np.subtract(self.vertices[v2],self.vertices[v1]), np.subtract(self.vertices[v3],self.vertices[v1]))
+        if not self.vnormals:
+            for vertex in self.faces:
+                v1 = int(vertex[0] - 1)
+                v2 = int(vertex[1] - 1)
+                v3 = int(vertex[2] - 1)
+                tn = self.cross(np.subtract(self.vertices[v2], self.vertices[v1]),
+                                np.subtract(self.vertices[v3], self.vertices[v1]))
                 newData.append(self.vertices[v1] + tn)
                 newData.append(self.vertices[v2] + tn)
                 newData.append(self.vertices[v3] + tn)
-        print(newData)
-        return newData
+            return newData
+        else:
+            for vertex in self.faces:
+                vn = int(vertex[0]) - 1
+                nn = int(vertex[1]) - 1
+                newData.append(self.vertices[vn] + self.vnormals[nn])
+            return newData
 
-    def cross(self,a, b):
+    def cross(self, a, b):
+        # source: https://stackoverflow.com/questions/1984799/cross-product-of-two-vectors-in-python
         c = [a[1] * b[2] - a[2] * b[1],
              a[2] * b[0] - a[0] * b[2],
              a[0] * b[1] - a[1] * b[0]]
@@ -144,7 +122,7 @@ class Scene:
         glEnable(GL_COLOR_MATERIAL)
 
         light = (self.maximum[1] - self.minimum[1]) * 2, (self.maximum[1] - self.minimum[1]) * 3, (
-                    self.maximum[1] - self.minimum[1]) * 2
+                self.maximum[1] - self.minimum[1]) * 2
 
         glMatrixMode(GL_MODELVIEW)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
