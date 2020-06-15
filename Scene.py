@@ -4,8 +4,9 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.arrays import vbo
 
-FILE ="bunny"
-#FILE ="elephant"
+FILE = "cow"
+#FILE = "bunny"
+
 
 class Scene:
     def __init__(self, width, height):
@@ -14,10 +15,9 @@ class Scene:
         self.faces = []
         self.createObjFromFile()
         self.minimum, self.maximum = self.createBoundingBox()
-        centerMin = np.array((self.minimum[0]/2, self.minimum[1]/2, self.minimum[2]/2))
-        centerMax = np.array((self.maximum[0]/2, self.maximum[1]/2, self.maximum[2]/2))
-        self.center = (centerMin + centerMax) /2
-        print("center", self.center)
+        centerMin = np.array((self.minimum[0] / 2, self.minimum[1] / 2, self.minimum[2] / 2))
+        centerMax = np.array((self.maximum[0] / 2, self.maximum[1] / 2, self.maximum[2] / 2))
+        self.center = (centerMin + centerMax) / 2
         self.scale = self.scaleIt(self.minimum, self.maximum)
         self.translate = self.translateIt(self.minimum, self.maximum)
         self.data = self.createData()
@@ -40,8 +40,8 @@ class Scene:
         print("scaloe", self.scale)
 
     def createObjFromFile(self):
-        #for line in open(sys.argv[1]):
-        for line in open(FILE +".obj"):
+        # for line in open(sys.argv[1]):
+        for line in open(FILE + ".obj"):
             if line.split():
                 type = line.split()[0]
                 if (type == 'v'):
@@ -49,7 +49,7 @@ class Scene:
                 if (type == 'vn'):
                     self.vnormals.append(list(map(float, line.split()[1:])))
                 if (type == "f"):
-                    if(len(self.vnormals) > 0):
+                    if (len(self.vnormals) > 0):
                         for face in line.split()[1:]:
                             self.faces.append(list(map(float, face.split('//'))))
                     elif (len(self.vnormals) == 0):
@@ -68,7 +68,7 @@ class Scene:
         xmin, ymin, zmin = minimum
         xmax, ymax, zmax = maximum
         return 2.0 / max(abs(xmax - xmin),
-                         abs(ymax - ymin), abs(zmax - zmin),)
+                         abs(ymax - ymin), abs(zmax - zmin), )
 
     def translateIt(self, minimum, maximum):
         xmin, ymin, zmin = minimum
@@ -81,26 +81,48 @@ class Scene:
 
     def createData(self):
         newData = []
-        if len(self.vnormals) == 0:
-            while len(self.vnormals) < len(self.vertices):
-                self.vnormals.append(np.zeros(3))
-            for face in self.faces:
-                v1 = np.array(self.vertices[int(face[0]) - 1])
-                v2 = np.array(self.vertices[int(face[1]) - 1])
-                v3 = np.array(self.vertices[int(face[2]) - 1])
-                n = np.cross(v2 - v1, v3 - v1)
-                #print("normals",  np.cross(v2 - v1, v3 - v1))
-                self.vnormals[int(face[0]) - 1] = n
-                self.vnormals[int(face[1]) - 1] = n
-                self.vnormals[int(face[2]) - 1] = n
-            print(self.vnormals)
+        # if len(self.vnormals) == 0:
+        #     while len(self.vnormals) < len(self.vertices):
+        #         self.vnormals.append(np.zeros(3))
+        #     for face in self.faces:
+        #         v1 = np.array(self.vertices[int(face[0]) - 1])
+        #         v2 = np.array(self.vertices[int(face[1]) - 1])
+        #         v3 = np.array(self.vertices[int(face[2]) - 1])
+        #         n = np.cross(v2 - v1, v3 - v1)
+        #         #print("normals",  np.cross(v2 - v1, v3 - v1))
+        #         self.vnormals[int(face[0]) - 1] = n
+        #         self.vnormals[int(face[1]) - 1] = n
+        #         self.vnormals[int(face[2]) - 1] = n
+        #         v1 = int(face[0]) - 1
+        #         v2 = int(face[1]) - 1
+        #         v3 = int(face[2]) - 1
+        #         newData.append(self.vertices[v1] + n)
+        #         newData.append(self.vertices[v2] + n)
+        #         newData.append(self.vertices[v3] + n)
+        #     print(newData)
+        #     return newData
 
         for vertex in self.faces:
             vn = int(vertex[0]) - 1
             nn = int(vertex[1]) - 1
-            newData.append(self.vertices[vn] + self.vnormals[nn])
-
+            if self.vnormals:
+                newData.append(self.vertices[vn] + self.vnormals[nn])
+            else:
+                v1 = int(vertex[0]-1)
+                v2 = int(vertex[1]-1)
+                v3 = int(vertex[2]-1)
+                tn = self.cross(np.subtract(self.vertices[v2],self.vertices[v1]), np.subtract(self.vertices[v3],self.vertices[v1]))
+                newData.append(self.vertices[v1] + tn)
+                newData.append(self.vertices[v2] + tn)
+                newData.append(self.vertices[v3] + tn)
+        print(newData)
         return newData
+
+    def cross(self,a, b):
+        c = [a[1] * b[2] - a[2] * b[1],
+             a[2] * b[0] - a[0] * b[2],
+             a[0] * b[1] - a[1] * b[0]]
+        return c
 
     def rotate(self, angle, axis):
         c, mc = math.cos(angle), 1 - math.cos(angle)
@@ -121,8 +143,8 @@ class Scene:
         glEnable(GL_LIGHT0)
         glEnable(GL_COLOR_MATERIAL)
 
-
-        light = (self.maximum[1] - self.minimum[1]) * 2,(self.maximum[1] - self.minimum[1]) * 3, (self.maximum[1] - self.minimum[1]) * 2
+        light = (self.maximum[1] - self.minimum[1]) * 2, (self.maximum[1] - self.minimum[1]) * 3, (
+                    self.maximum[1] - self.minimum[1]) * 2
 
         glMatrixMode(GL_MODELVIEW)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -158,7 +180,6 @@ class Scene:
 
         if self.translateXY:
             glTranslate(self.translateXY[0], -self.translateXY[1], 0.0)
-
 
         glColor3fv(self.color)
         glScale(self.scale, self.scale, self.scale)
